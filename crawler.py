@@ -1,5 +1,4 @@
 from selenium import webdriver as wd
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from multiprocessing import Pool
 from download import *
