@@ -10,14 +10,13 @@ import urllib
 import os
 import urllib3
 
-
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--disable-extensions")
+options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
 def get_audio_keyword(keyword):
 
-    options = Options()
-    options.add_argument("--headless")
-    options.addArguments("--disable-extensions")
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
     driver = wd.Chrome(executable_path=r"tool/chromedriver.exe",chrome_options=options)
 
     if not os.path.isdir("data/" + "_".join(keyword.split())):
@@ -33,24 +32,31 @@ def get_audio_keyword(keyword):
         for _ in range(config.loops_to_scoll):
             driver.execute_script('window.scrollBy(0,1000)')
             time.sleep(config.time_sleep)
+        
+        sections = driver.find_elements_by_tag_name("ytd-item-section-renderer")
 
-        videos = driver.find_elements_by_tag_name('ytd-video-renderer')
+        print("Number of sections: " + str(len(sections)))
 
-        for v in videos:
-            try:
-                video_title = v.find_element_by_id('video-title').text
-                if video_title.lower().__contains__(keyword.lower()):
-                    url = v.find_element_by_id('thumbnail').get_attribute('href')
-                    download(url=url, keyname="data/" + "_".join(keyword.split()))
-            except selenium.common.exceptions.NoSuchElementException as e:
-                continue
-
+        for section in sections:
+            videos = section.find_elements_by_tag_name('ytd-video-renderer')
+            for v in videos:
+                try:
+                    video_title = v.find_element_by_id('video-title').text
+                    if video_title.lower().__contains__(keyword.lower()):
+                        url = v.find_element_by_id('thumbnail').get_attribute('href')
+                        download(url=url, keyname="data/" + "_".join(keyword.split()))
+                except selenium.common.exceptions.NoSuchElementException as e:
+                    continue
+        
+        driver.close()
         driver.quit()
 
     except urllib3.exceptions.MaxRetryError as e:
         print(e)
+        driver.close()
         driver.quit()
 
+    driver.close()
     driver.quit()
 
 if __name__ == "__main__":
